@@ -1,0 +1,20 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <pthread.h>
+#include <unistd.h>
+#define SIZE_BUFF 15		
+int B[SIZE_BUFF];  	
+int rear = 0;  			
+int front = -1; 			
+int count = 0;  			
+int resacc = 0;
+int readerFlag = 0;     
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER; 	
+pthread_cond_t cons_cond = PTHREAD_COND_INITIALIZER; 
+pthread_cond_t prod_cond = PTHREAD_COND_INITIALIZER; 
+pthread_mutex_t mtxData = PTHREAD_MUTEX_INITIALIZER; 
+void *writer(void* param);
+void *reader(void* param);
+int main(int argc, char *argv[]) 
+{
