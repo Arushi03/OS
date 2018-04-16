@@ -1,0 +1,60 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <pthread.h>
+#include <unistd.h>
+#define SIZE_BUFF 15		
+int B[SIZE_BUFF];  	
+int rear = 0;  			
+int front = -1; 			
+int count = 0;  			
+int resacc = 0;
+int readerFlag = 0;     
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER; 	
+pthread_cond_t cons_cond = PTHREAD_COND_INITIALIZER; 
+pthread_cond_t prod_cond = PTHREAD_COND_INITIALIZER; 
+pthread_mutex_t mtxData = PTHREAD_MUTEX_INITIALIZER; 
+void *writer(void* param);
+void *reader(void* param);
+int main(int argc, char *argv[]) 
+{
+srand(time(NULL));
+pthread_t thId[SIZE_BUFF];
+int idx;
+for (idx = 0; idx < SIZE_BUFF / 2; ++idx)
+{
+if(pthread_create(&thId[idx], NULL, writer, NULL) != 0)
+{
+fprintf(stderr, "writer thread cannot be created\n");
+exit(1);
+}
+if(pthread_create(&thId[idx + SIZE_BUFF/2], NULL, reader, NULL) != 0)
+{
+fprintf(stderr, "reader thread cannot be created\n");
+exit(1);
+}
+}
+for (idx = 0; idx < SIZE_BUFF; ++idx)
+{
+pthread_join(thId[idx], NULL);	
+}
+fprintf(stdout, "Quit Parent thread\n");
+return 0;
+}
+void *writer(void* param)
+{	
+int r = rand() % 500;
+usleep(r);
+pthread_mutex_lock(&mtx);
+while(resacc > 0 || readerFlag == 1)
+pthread_cond_wait(&prod_cond,&mtx);
+--resacc;
+pthread_mutex_unlock(&mtx);
+unsigned int tid = (unsigned int)pthread_self();
+pthread_mutex_lock(&mtxData);
+if (front != rear)  
+{
+int newVal = rand() % 300;
+B[rear] = newVal; 
+rear = (rear + 1) %  SIZE_BUFF; 
+int readersCount = resacc < 0 ? 0 : resacc;
